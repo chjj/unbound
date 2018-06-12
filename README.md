@@ -25,8 +25,10 @@ Outputs:
 The API is a direct mapping to [libunbound calls][header].
 
 - `Unbound.version()` - Return unbound version string.
-- `Unbound#setOption(opt, val)` - Set resolver option.
-- `Unbound#getOption(opt)` - Get resolver option.
+- `Unbound#setOption(opt, val)` - Set [resolver option][conf]. Note that the
+  trailing colon is not necessary.
+- `Unbound#getOption(opt)` - Get [resolver option][conf]. Note that the
+  trailing colon is not necessary.
 - `Unbound#setConfig(file)` - Read unbound config file.
 - `Unbound#setForward(addr)` - Set host to forward DNS queries to.
 - `Unbound#setStub(zone, addr, [prime=false])` - Setup stub zone.
@@ -58,3 +60,4 @@ See LICENSE for more info.
 
 [libunbound]: https://www.unbound.net/
 [header]: https://github.com/NLnetLabs/unbound/blob/master/libunbound/unbound.h
+[conf]: https://www.unbound.net/documentation/unbound.conf.html
