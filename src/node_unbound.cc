@@ -497,6 +497,7 @@ NAN_METHOD(NodeUnbound::Resolve) {
   *req->refs += 1;
 
   if (*req->refs == 1) {
+    assert(!req->poll->data);
     req->poll->data = (void *)ub->ctx;
     assert(uv_poll_start(req->poll, UV_READABLE, after_poll) == 0);
   }
@@ -573,6 +574,7 @@ after_resolve(void *data, int status, struct ub_result *result) {
 
   if (*req->refs == 1) {
     assert(uv_poll_stop(req->poll) == 0);
+    assert(req->poll->data);
     req->poll->data = NULL;
   }
 
@@ -580,7 +582,8 @@ after_resolve(void *data, int status, struct ub_result *result) {
 
   if (status != 0) {
     v8::Local<v8::Value> argv[] = {
-      Nan::Error(ub_strerror(status))
+      Nan::Error(ub_strerror(status)),
+      Nan::Null()
     };
 
     req->cb->Call(2, argv, &async_resource);
