@@ -26,9 +26,11 @@ The API is a direct mapping to [libunbound calls][header].
 
 - `Unbound.version()` - Return unbound version string.
 - `Unbound#setOption(opt, val)` - Set [resolver option][conf]. Note that the
-  trailing colon is not necessary.
+  trailing colon is not necessary. Values will be cast to strings (`null=''`,
+  `bool='yes'/'no'`, `num=+num`).
 - `Unbound#getOption(opt)` - Get [resolver option][conf]. Note that the
-  trailing colon is not necessary.
+  trailing colon is not necessary. Return values will be cast to bools,
+  numbers, and nulls where appropriate.
 - `Unbound#setConfig(file)` - Read unbound config file.
 - `Unbound#setForward(addr)` - Set host to forward DNS queries to.
 - `Unbound#setStub(zone, addr, [prime=false])` - Setup stub zone.
@@ -44,7 +46,8 @@ The API is a direct mapping to [libunbound calls][header].
 - `Unbound#addData(data)` - Add localdata to the local authority info.
 - `Unbound#removeData(data)` - Remove data.
 - `Unbound#resolve(name, [type=A], [class=IN])` - Asynchronous recursive
-  resolution (returns a `Promise`). See above example.
+  resolution (returns a `Promise`). `type` and `class` a raw qtypes and
+  qclasses (no strings!). See above example for return value.
 
 ## Contribution and License Agreement
 
