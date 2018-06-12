@@ -484,6 +484,10 @@ NAN_METHOD(NodeUnbound::Resolve) {
 
     if (uv_poll_start(&ub->poll, UV_READABLE, after_poll) != 0) {
       ub->poll.data = NULL;
+
+      delete cb;
+      free(req);
+
       return Nan::ThrowError("Could not poll.");
     }
   }
@@ -501,9 +505,16 @@ NAN_METHOD(NodeUnbound::Resolve) {
   );
 
   if (err != 0) {
+    ub->refs -= 1;
+
+    if (ub->refs == 0) {
+      ub->poll.data = NULL;
+      assert(uv_poll_stop(&ub->poll) == 0);
+    }
+
     delete cb;
     free(req);
-    ub->refs -= 1;
+
     return Nan::ThrowError(ub_strerror(err));
   }
 
