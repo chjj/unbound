@@ -9,8 +9,14 @@
 typedef struct nu_req_s {
   uv_poll_t *poll;
   unsigned int *refs;
-  void *cb;
+  Nan::Callback *cb;
 } nu_req_t;
+
+static nu_req_t *
+nu_req_create(uv_poll_t *poll, unsigned int *refs, Nan::Callback *cb);
+
+static void
+nu_req_free(nu_req_t *req);
 
 static void
 after_resolve(void *data, int status, struct ub_result *result);
@@ -466,33 +472,11 @@ NAN_METHOD(NodeUnbound::Resolve) {
   v8::Local<v8::Function> callback = info[3].As<v8::Function>();
 
 #ifdef NODE_UNBOUND_ASYNC
-  Nan::Callback *cb = new Nan::Callback(callback);
+  nu_req_t *req = nu_req_create(
+    &ub->poll, &ub->refs, new Nan::Callback(callback));
 
-  nu_req_t *req = (nu_req_t *)malloc(sizeof(nu_req_t));
-
-  if (!req) {
-    delete cb;
+  if (!req)
     return Nan::ThrowError("Could not allocate memory.");
-  }
-
-  req->poll = &ub->poll;
-  req->refs = &ub->refs;
-  req->cb = (void *)cb;
-
-  if (ub->refs == 0) {
-    ub->poll.data = (void *)ub->ctx;
-
-    if (uv_poll_start(&ub->poll, UV_READABLE, after_poll) != 0) {
-      ub->poll.data = NULL;
-
-      delete cb;
-      free(req);
-
-      return Nan::ThrowError("Could not poll.");
-    }
-  }
-
-  ub->refs += 1;
 
   int err = ub_resolve_async(
     ub->ctx,
@@ -505,22 +489,19 @@ NAN_METHOD(NodeUnbound::Resolve) {
   );
 
   if (err != 0) {
-    ub->refs -= 1;
-
-    if (ub->refs == 0) {
-      ub->poll.data = NULL;
-      assert(uv_poll_stop(&ub->poll) == 0);
-    }
-
-    delete cb;
-    free(req);
-
+    nu_req_free(req);
     return Nan::ThrowError(ub_strerror(err));
   }
 
-  return info.GetReturnValue().Set(info.This());
-#endif
+  *req->refs += 1;
 
+  if (*req->refs == 1) {
+    req->poll->data = (void *)ub->ctx;
+    assert(uv_poll_start(req->poll, UV_READABLE, after_poll) == 0);
+  }
+
+  info.GetReturnValue().Set(info.This());
+#else
   char *qname = strdup(name);
 
   if (!qname)
@@ -540,40 +521,73 @@ NAN_METHOD(NodeUnbound::Resolve) {
   Nan::AsyncQueueWorker(worker);
 
   info.GetReturnValue().Set(info.This());
+#endif
 }
 
 #ifdef NODE_UNBOUND_ASYNC
+static nu_req_t *
+nu_req_create(uv_poll_t *poll, unsigned int *refs, Nan::Callback *cb) {
+  nu_req_t *req = (nu_req_t *)malloc(sizeof(nu_req_t));
+
+  if (!req) {
+    delete cb;
+    return NULL;
+  }
+
+  req->poll = poll;
+  req->refs = refs;
+  req->cb = cb;
+
+  return req;
+}
+
+static void
+nu_req_free(nu_req_t *req) {
+  assert(req);
+  assert(req->cb);
+  delete req->cb;
+  free(req);
+}
+
+static void
+after_poll(uv_poll_t *handle, int status, int events) {
+  struct ub_ctx *ctx = (struct ub_ctx *)handle->data;
+
+  assert(ctx);
+
+  if (status == 0 && (events & UV_READABLE))
+    ub_process(ctx);
+}
+
 static void
 after_resolve(void *data, int status, struct ub_result *result) {
   Nan::HandleScope scope;
   Nan::AsyncResource async_resource("unbound");
 
   nu_req_t *req = (nu_req_t *)data;
+
   assert(req);
-
-  Nan::Callback *callback = (Nan::Callback *)req->cb;
-  assert(callback);
-
+  assert(req->cb);
   assert(*req->refs != 0);
 
-  if (--*req->refs == 0) {
-    req->poll->data = NULL;
+  if (*req->refs == 1) {
     assert(uv_poll_stop(req->poll) == 0);
+    req->poll->data = NULL;
   }
 
-  free(req);
+  *req->refs -= 1;
 
   if (status != 0) {
     v8::Local<v8::Value> argv[] = {
       Nan::Error(ub_strerror(status))
     };
 
-    callback->Call(2, argv, &async_resource);
-
-    delete callback;
+    req->cb->Call(2, argv, &async_resource);
 
     if (result)
       ub_resolve_free(result);
+
+    nu_req_free(req);
 
     return;
   }
@@ -598,20 +612,9 @@ after_resolve(void *data, int status, struct ub_result *result) {
 
   v8::Local<v8::Value> argv[] = { Nan::Null(), ret };
 
-  callback->Call(2, argv, &async_resource);
+  req->cb->Call(2, argv, &async_resource);
 
-  delete callback;
-}
-
-static void
-after_poll(uv_poll_t *handle, int status, int events) {
-  struct ub_ctx *ctx = (struct ub_ctx *)handle->data;
-
-  if (!ctx)
-    return;
-
-  if (status == 0 && (events & UV_READABLE))
-    ub_process(ctx);
+  nu_req_free(req);
 }
 #endif
 
