@@ -1,14 +1,108 @@
 #include <unbound.h>
 #include "node_unbound.h"
 #include "node_unbound_async.h"
+#ifdef NODE_UNBOUND_ASYNC
+#include <uv.h>
+#endif
+
+#ifdef NODE_UNBOUND_ASYNC
+typedef struct nu_req_s {
+  uv_poll_t *poll;
+  unsigned int *refs;
+  void *cb;
+} nu_req_t;
+
+static void
+after_resolve(void *data, int status, struct ub_result *result) {
+  Nan::HandleScope scope;
+
+  Nan::AsyncResource async_resource("unbound");
+  // old
+  // Nan::Callback *callback = (Nan::Callback *)data;
+  // assert(callback);
+  // /old
+
+  // new
+  nu_req_t *nr = (nu_req_t *)data;
+  assert(nr);
+  Nan::Callback *callback = (Nan::Callback *)nr->cb;
+  assert(callback);
+
+  if (--*nr->refs == 0) {
+    nr->poll->data = NULL;
+    uv_poll_stop(nr->poll);
+  }
+
+  free(nr);
+  // /new
+
+  if (status != 0) {
+    // error handling
+    v8::Local<v8::Value> argv[] = {
+      Nan::Error(ub_strerror(status))
+    };
+    callback->Call(2, argv, &async_resource);
+    delete callback;
+    if (result)
+      ub_resolve_free(result);
+    return;
+  }
+
+  assert(result);
+
+  uint8_t *pkt = (uint8_t *)result->answer_packet;
+  size_t pkt_len = result->answer_len;
+
+  v8::Local<v8::Array> ret = Nan::New<v8::Array>();
+
+  ret->Set(0, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
+  ret->Set(1, Nan::New<v8::Boolean>((bool)result->secure));
+  ret->Set(2, Nan::New<v8::Boolean>((bool)result->bogus));
+
+  if (result->bogus && result->why_bogus)
+    ret->Set(3, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
+  else
+    ret->Set(3, Nan::Null());
+
+  ub_resolve_free(result);
+
+  v8::Local<v8::Value> argv[] = { Nan::Null(), ret };
+
+  callback->Call(2, argv, &async_resource);
+  delete callback;
+}
+
+static void
+after_poll(uv_poll_t *handle, int status, int events) {
+  struct ub_ctx *ctx = (struct ub_ctx *)handle->data;
+
+  if (!ctx)
+    return;
+
+  if (status == 0 && (events & UV_READABLE))
+    ub_process(ctx);
+}
+#endif
 
 static Nan::Persistent<v8::FunctionTemplate> unbound_constructor;
 
 NodeUnbound::NodeUnbound() {
   ctx = NULL;
+#ifdef NODE_UNBOUND_ASYNC
+  poll.data = NULL;
+  refs = 0;
+#endif
 }
 
 NodeUnbound::~NodeUnbound() {
+#ifdef NODE_UNBOUND_ASYNC
+  assert(refs == 0);
+  if (poll.data) {
+    poll.data = NULL;
+    uv_poll_stop(&poll);
+  }
+  refs = 0;
+#endif
   if (ctx) {
     ub_ctx_delete(ctx);
     ctx = NULL;
@@ -81,6 +175,21 @@ NAN_METHOD(NodeUnbound::New) {
 
   if (err != 0)
     return Nan::ThrowError(ub_strerror(err));
+
+#ifdef NODE_UNBOUND_ASYNC
+  if (ub_ctx_async(ub->ctx, 1) != 0)
+    return Nan::ThrowError("Could not create NodeUnbound instance.");
+
+  if (uv_poll_init(uv_default_loop(), &ub->poll, ub_fd(ub->ctx)) != 0)
+    return Nan::ThrowError("Could not create NodeUnbound instance.");
+
+  // old
+  // ub->poll.data = (void *)ub->ctx;
+
+  // if (uv_poll_start(&ub->poll, UV_READABLE, after_poll) != 0)
+  //   return Nan::ThrowError("Could not create NodeUnbound instance.");
+  // /old
+#endif
 
   info.GetReturnValue().Set(info.This());
 }
@@ -431,6 +540,56 @@ NAN_METHOD(NodeUnbound::Resolve) {
   uint32_t rrclass = info[2]->Uint32Value();
 
   v8::Local<v8::Function> callback = info[3].As<v8::Function>();
+
+#ifdef NODE_UNBOUND_ASYNC
+  Nan::Callback *cb = new Nan::Callback(callback);
+
+  // new
+  nu_req_t *nr = (nu_req_t *)malloc(sizeof(nu_req_t));
+
+  if (!nr) {
+    delete cb;
+    return Nan::ThrowError("Could not allocate memory.");
+  }
+
+  nr->poll = &ub->poll;
+  nr->refs = &ub->refs;
+  nr->cb = (void *)cb;
+
+  if (ub->refs == 0) {
+    ub->poll.data = (void *)ub->ctx;
+
+    if (uv_poll_start(&ub->poll, UV_READABLE, after_poll) != 0) {
+      ub->poll.data = NULL;
+      return Nan::ThrowError("Could not poll.");
+    }
+  }
+
+  ub->refs += 1;
+  // /new
+
+  int err = ub_resolve_async(
+    ub->ctx,
+    name,
+    rrtype,
+    rrclass,
+    // (void *)cb, // old
+    (void *)nr, // new
+    after_resolve,
+    NULL
+  );
+
+  if (err != 0) {
+    delete cb;
+    // new
+    free(nr);
+    ub->refs -= 1;
+    // /new
+    return Nan::ThrowError(ub_strerror(err));
+  }
+
+  return info.GetReturnValue().Set(info.This());
+#endif
 
   char *qname = strdup(name);
 
