@@ -46,7 +46,7 @@ The API is a direct mapping to [libunbound calls][header].
 - `Unbound#addData(data)` - Add localdata to the local authority info.
 - `Unbound#removeData(data)` - Remove data.
 - `Unbound#resolve(name, [type=A], [class=IN])` - Asynchronous recursive
-  resolution (returns a `Promise`). `type` and `class` a raw qtypes and
+  resolution (returns a `Promise`). `type` and `class` are raw qtypes and
   qclasses (no strings!). See above example for return value.
 
 ## Contribution and License Agreement
