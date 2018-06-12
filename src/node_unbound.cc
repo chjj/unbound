@@ -1,8 +1,9 @@
 #include <unbound.h>
 #include "node_unbound.h"
-#include "node_unbound_async.h"
 #ifdef NODE_UNBOUND_ASYNC
 #include <uv.h>
+#else
+#include "node_unbound_async.h"
 #endif
 
 #ifdef NODE_UNBOUND_ASYNC
