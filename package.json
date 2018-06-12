@@ -1,0 +1,34 @@
+{
+  "name": "unbound",
+  "version": "0.0.0",
+  "description": "Bindings to libunbound for node.js",
+  "keywords": [
+    "dns",
+    "unbound"
+  ],
+  "license": "MIT",
+  "repository": "git://github.com/chjj/unbound.git",
+  "homepage": "https://github.com/chjj/unbound",
+  "bugs": {
+    "url": "https://github.com/chjj/unbound/issues"
+  },
+  "author": "Christopher Jeffrey <chjjeffrey@gmail.com>",
+  "main": "./lib/unbound.js",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "lint": "eslint lib/ test/ || exit 0",
+    "test": "mocha --reporter spec test/*-test.js"
+  },
+  "dependencies": {
+    "bindings": "~1.3.0",
+    "nan": "~2.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "mocha": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "gypfile": true
+}
