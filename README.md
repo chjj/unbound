@@ -27,7 +27,7 @@ The API is a direct mapping to [libunbound calls][header].
 - `Unbound.version()` - Return unbound version string.
 - `Unbound#setOption(opt, val)` - Set [resolver option][conf]. Note that the
   trailing colon is not necessary. Values will be cast to strings (`null=''`,
-  `bool='yes'/'no'`, `num=+num`).
+  `bool='yes'/'no'`, `num=num.toString(10)`).
 - `Unbound#getOption(opt)` - Get [resolver option][conf]. Note that the
   trailing colon is not necessary. Return values will be cast to bools,
   numbers, and nulls where appropriate.
