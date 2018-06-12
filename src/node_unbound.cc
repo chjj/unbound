@@ -547,7 +547,7 @@ after_resolve(void *data, int status, struct ub_result *result) {
 
   if (--*req->refs == 0) {
     req->poll->data = NULL;
-    uv_poll_stop(req->poll);
+    assert(uv_poll_stop(req->poll) == 0);
   }
 
   free(req);
