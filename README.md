@@ -1,6 +1,6 @@
 # unbound
 
-Bindings to libunbound for node.js.
+Bindings to [libunbound] for node.js.
 
 ## Usage
 
@@ -22,24 +22,27 @@ Outputs:
 
 ## API
 
-See: https://github.com/NLnetLabs/unbound/blob/master/libunbound/unbound.h
+The API is a direct mapping to [libunbound calls][header].
 
-- `Unbound.version()` - Returns version string.
-- `Unbound#setOption(opt, val)`
-- `Unbound#getOption(opt)`
-- `Unbound#setConfig(file)`
-- `Unbound#setForward(addrname)`
-- `Unbound#setStub(zone, addr, [isPrime=false])`
-- `Unbound#setResolvConf(filename)`
-- `Unbound#setHosts(filename)`
-- `Unbound#addTrustAnchor(ta)`
-- `Unbound#addTrustAnchorFile(file, [autr=false])`
-- `Unbound#addTrustedKeys(file)`
-- `Unbound#addZone(zoneName, zoneType)`
-- `Unbound#removeZone(zoneName)`
-- `Unbound#addData(data)`
-- `Unbound#removeData(data)`
-- `Unbound#resolve(name, [type=A], [class=IN])`
+- `Unbound.version()` - Return unbound version string.
+- `Unbound#setOption(opt, val)` - Set resolver option.
+- `Unbound#getOption(opt)` - Get resolver option.
+- `Unbound#setConfig(file)` - Read unbound config file.
+- `Unbound#setForward(addr)` - Set host to forward DNS queries to.
+- `Unbound#setStub(zone, addr, [prime=false])` - Setup stub zone.
+- `Unbound#setResolvConf(filename)` - Read from `resolv.conf`.
+- `Unbound#setHosts(filename)` - Read from an `/etc/hosts` file.
+- `Unbound#addTrustAnchor(ta)` - Add a trust anchor (DS/DNSKEY presentation).
+- `Unbound#addTrustAnchorFile(file, [autr=false])` - Add trust anchor file.
+  Set `autr` for auto-updating and reading.
+- `Unbound#addTrustedKeys(file)` - Add bind-style trust anchors.
+- `Unbound#addZone(zoneName, zoneType)` - Add a zone to the local authority
+  info.
+- `Unbound#removeZone(zoneName)` - Remove zone.
+- `Unbound#addData(data)` - Add localdata to the local authority info.
+- `Unbound#removeData(data)` - Remove data.
+- `Unbound#resolve(name, [type=A], [class=IN])` - Asynchronous recursive
+  resolution (returns a `Promise`). See above example.
 
 ## Contribution and License Agreement
 
@@ -52,3 +55,6 @@ all code is your original work. `</legalese>`
 - Copyright (c) 2018, Christopher Jeffrey (MIT License).
 
 See LICENSE for more info.
+
+[libunbound]: https://www.unbound.net/
+[header]: https://github.com/NLnetLabs/unbound/blob/master/libunbound/unbound.h
