@@ -1,8 +1,10 @@
 #ifndef _NODE_UNBOUND_HH
 #define _NODE_UNBOUND_HH
+
 #include <node.h>
 #include <nan.h>
 #include <unbound.h>
+
 #ifdef NODE_UNBOUND_ASYNC
 #include <uv.h>
 #endif
