@@ -612,12 +612,11 @@ after_resolve(void *data, int status, struct ub_result *result) {
   else
     ret->Set(3, Nan::Null());
 
-  ub_resolve_free(result);
-
   v8::Local<v8::Value> argv[] = { Nan::Null(), ret };
 
   req->cb->Call(2, argv, &async_resource);
 
+  ub_resolve_free(result);
   nu_req_free(req);
 }
 #endif
