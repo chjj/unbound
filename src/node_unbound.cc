@@ -183,7 +183,7 @@ NAN_METHOD(NodeUnbound::SetConfig) {
   NodeUnbound *ub = ObjectWrap::Unwrap<NodeUnbound>(info.Holder());
 
   if (info.Length() != 1)
-    return Nan::ThrowError("unbound.config() requires arguments.");
+    return Nan::ThrowError("unbound.setConfig() requires arguments.");
 
   if (!info[0]->IsString())
     return Nan::ThrowTypeError("First argument must be a string.");
@@ -390,7 +390,7 @@ NAN_METHOD(NodeUnbound::RemoveZone) {
   NodeUnbound *ub = ObjectWrap::Unwrap<NodeUnbound>(info.Holder());
 
   if (info.Length() != 1)
-    return Nan::ThrowError("unbound.addTrustedKeys() requires arguments.");
+    return Nan::ThrowError("unbound.removeZone() requires arguments.");
 
   if (!info[0]->IsString())
     return Nan::ThrowTypeError("First argument must be a string.");
@@ -410,7 +410,7 @@ NAN_METHOD(NodeUnbound::AddData) {
   NodeUnbound *ub = ObjectWrap::Unwrap<NodeUnbound>(info.Holder());
 
   if (info.Length() != 1)
-    return Nan::ThrowError("unbound.addTrustedKeys() requires arguments.");
+    return Nan::ThrowError("unbound.addData() requires arguments.");
 
   if (!info[0]->IsString())
     return Nan::ThrowTypeError("First argument must be a string.");
@@ -430,7 +430,7 @@ NAN_METHOD(NodeUnbound::RemoveData) {
   NodeUnbound *ub = ObjectWrap::Unwrap<NodeUnbound>(info.Holder());
 
   if (info.Length() != 1)
-    return Nan::ThrowError("unbound.addTrustedKeys() requires arguments.");
+    return Nan::ThrowError("unbound.removeData() requires arguments.");
 
   if (!info[0]->IsString())
     return Nan::ThrowTypeError("First argument must be a string.");
