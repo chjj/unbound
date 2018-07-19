@@ -1,6 +1,6 @@
 {
   "name": "unbound",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Bindings to libunbound for node.js",
   "keywords": [
     "dns",
