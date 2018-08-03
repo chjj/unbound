@@ -30,6 +30,8 @@ The API is a direct mapping to [libunbound calls][header].
   `bool='yes'/'no'`, `num=num.toString(10)`).
 - `Unbound#getOption(opt)` - Get [resolver option][conf]. Note that the
   trailing colon is not necessary. Return values will be cast to bools,
+- `Unbound#hasOption(opt)` - Test whether an option is available.
+- `Unbound#tryOption(opt, val)` - Try to set option. Swallow error.
   numbers, and nulls where appropriate.
 - `Unbound#setConfig(file)` - Read unbound config file.
 - `Unbound#setForward(addr)` - Set host to forward DNS queries to.

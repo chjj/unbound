@@ -16,9 +16,13 @@ describe('Unbound', function() {
   it('should resolve www.ietf.org.', async () => {
     const ub = new Unbound();
 
+    assert(ub.hasOption('logfile'));
+    assert(!ub.hasOption('foobar'));
+    ub.tryOption('foobar', false);
+
     ub.setOption('logfile', null);
     ub.setOption('use-syslog', false);
-    ub.setOption('trust-anchor-signaling', false);
+    ub.tryOption('trust-anchor-signaling', false);
     ub.setOption('edns-buffer-size', 4096);
     ub.setOption('max-udp-size', 4096);
     ub.setOption('msg-cache-size', 4 << 20);
@@ -28,7 +32,7 @@ describe('Unbound', function() {
     ub.setOption('do-ip6', false);
     ub.setOption('do-udp', true);
     ub.setOption('do-tcp', false);
-    ub.setOption('qname-minimisation', true);
+    ub.tryOption('qname-minimisation', true);
     ub.setOption('minimal-responses', false);
 
     assert.strictEqual(ub.getOption('logfile'), null);
