@@ -32,7 +32,7 @@ The API is a direct mapping to [libunbound calls][header].
   trailing colon is not necessary. Return values will be cast to bools,
   numbers, and nulls where appropriate.
 - `Unbound#hasOption(opt)` - Test whether an option is available.
-- `Unbound#tryOption(opt, val)` - Try to set option. Swallow errors.
+- `Unbound#tryOption(opt, val)` - Try to set option if available.
 - `Unbound#setConfig(file)` - Read unbound config file.
 - `Unbound#setForward(addr)` - Set host to forward DNS queries to.
 - `Unbound#setStub(zone, addr, [prime=false])` - Setup stub zone.
