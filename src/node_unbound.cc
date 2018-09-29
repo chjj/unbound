@@ -26,9 +26,6 @@ static void
 after_poll(uv_poll_t *handle, int status, int events);
 #endif
 
-static const char *nu_prefix = "libunbound: ";
-static char nu_errbuf[12 + 256 + 1];
-
 static const char *
 nu_strerror(int err) {
   const char *msg = ub_strerror(err);
@@ -39,13 +36,13 @@ nu_strerror(int err) {
   size_t size = strlen(msg);
 
   if (size > 256)
-    size = 256;
+    msg = "unknown error";
 
-  memcpy((void *)&nu_errbuf[0], (void *)&nu_prefix[0], 12);
-  memcpy((void *)&nu_errbuf[12], (void *)&msg[0], size);
-  nu_errbuf[12 + size] = '\0';
+  static char errmsg[12 + 256 + 1];
 
-  return nu_errbuf;
+  sprintf(&errmsg[0], "libunbound: %s", msg);
+
+  return errmsg;
 }
 
 static Nan::Persistent<v8::FunctionTemplate> unbound_constructor;
