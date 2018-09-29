@@ -24,9 +24,6 @@
     "include_dirs": [
       "<!(node -e \"require('nan')\")"
     ],
-    "defines": [
-      "NODE_UNBOUND_ASYNC"
-    ],
     "libraries": [
       "-lunbound"
     ]
