@@ -1,30 +1,5 @@
 #include <unbound.h>
 #include "node_unbound.h"
-#ifdef NODE_UNBOUND_ASYNC
-#include <uv.h>
-#else
-#include "node_unbound_async.h"
-#endif
-
-#ifdef NODE_UNBOUND_ASYNC
-typedef struct nu_req_s {
-  uv_poll_t *poll;
-  unsigned int *refs;
-  Nan::Callback *cb;
-} nu_req_t;
-
-static nu_req_t *
-nu_req_create(uv_poll_t *poll, unsigned int *refs, Nan::Callback *cb);
-
-static void
-nu_req_free(nu_req_t *req);
-
-static void
-after_resolve(void *data, int status, struct ub_result *result);
-
-static void
-after_poll(uv_poll_t *handle, int status, int events);
-#endif
 
 static const char *
 nu_strerror(int err) {
@@ -49,17 +24,9 @@ static Nan::Persistent<v8::FunctionTemplate> unbound_constructor;
 
 NodeUnbound::NodeUnbound() {
   ctx = NULL;
-#ifdef NODE_UNBOUND_ASYNC
-  poll.data = NULL;
-  refs = 0;
-#endif
 }
 
 NodeUnbound::~NodeUnbound() {
-#ifdef NODE_UNBOUND_ASYNC
-  assert(!poll.data);
-  assert(refs == 0);
-#endif
   if (ctx) {
     ub_ctx_delete(ctx);
     ctx = NULL;
@@ -132,14 +99,6 @@ NAN_METHOD(NodeUnbound::New) {
 
   if (err != 0)
     return Nan::ThrowError(nu_strerror(err));
-
-#ifdef NODE_UNBOUND_ASYNC
-  if (ub_ctx_async(ub->ctx, 1) != 0)
-    return Nan::ThrowError("Could not create Unbound instance.");
-
-  if (uv_poll_init(uv_default_loop(), &ub->poll, ub_fd(ub->ctx)) != 0)
-    return Nan::ThrowError("Could not create Unbound instance.");
-#endif
 
   info.GetReturnValue().Set(info.This());
 }
@@ -465,6 +424,92 @@ NAN_METHOD(NodeUnbound::RemoveData) {
   info.GetReturnValue().Set(info.This());
 }
 
+class NodeUnboundWorker : public Nan::AsyncWorker {
+public:
+  NodeUnboundWorker (
+    struct ub_ctx *ctx,
+    char *name,
+    int rrtype,
+    int rrclass,
+    Nan::Callback *callback
+  );
+
+  virtual ~NodeUnboundWorker();
+  virtual void Execute();
+  void HandleOKCallback();
+
+private:
+  struct ub_ctx *ctx;
+  char *name;
+  int rrtype;
+  int rrclass;
+  struct ub_result *result;
+};
+
+NodeUnboundWorker::NodeUnboundWorker (
+  struct ub_ctx *ctx,
+  char *name,
+  int rrtype,
+  int rrclass,
+  Nan::Callback *callback
+) : Nan::AsyncWorker(callback)
+  , ctx(ctx)
+  , name(name)
+  , rrtype(rrtype)
+  , rrclass(rrclass)
+  , result(NULL)
+{
+  Nan::HandleScope scope;
+}
+
+NodeUnboundWorker::~NodeUnboundWorker() {
+  if (name) {
+    free(name);
+    name = NULL;
+  }
+
+  if (result) {
+    ub_resolve_free(result);
+    result = NULL;
+  }
+}
+
+void
+NodeUnboundWorker::Execute() {
+  int err = ub_resolve(ctx, name, rrtype, rrclass, &result);
+
+  if (err != 0)
+    SetErrorMessage(ub_strerror(err));
+}
+
+void
+NodeUnboundWorker::HandleOKCallback() {
+  Nan::HandleScope scope;
+
+  assert(result);
+
+  uint8_t *pkt = (uint8_t *)result->answer_packet;
+  size_t pkt_len = result->answer_len;
+
+  v8::Local<v8::Array> ret = Nan::New<v8::Array>();
+
+  ret->Set(0, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
+  ret->Set(1, Nan::New<v8::Boolean>((bool)result->secure));
+  ret->Set(2, Nan::New<v8::Boolean>((bool)result->bogus));
+
+  if (result->bogus && result->why_bogus)
+    ret->Set(3, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
+  else
+    ret->Set(3, Nan::Null());
+
+  ub_resolve_free(result);
+  result = NULL;
+
+  v8::Local<v8::Value> argv[] = { Nan::Null(), ret };
+
+  callback->Call(2, argv, async_resource);
+}
+
 NAN_METHOD(NodeUnbound::Resolve) {
   NodeUnbound *ub = ObjectWrap::Unwrap<NodeUnbound>(info.Holder());
 
@@ -491,38 +536,6 @@ NAN_METHOD(NodeUnbound::Resolve) {
 
   v8::Local<v8::Function> callback = info[3].As<v8::Function>();
 
-#ifdef NODE_UNBOUND_ASYNC
-  nu_req_t *req = nu_req_create(
-    &ub->poll, &ub->refs, new Nan::Callback(callback));
-
-  if (!req)
-    return Nan::ThrowError("Could not allocate memory.");
-
-  int err = ub_resolve_async(
-    ub->ctx,
-    name,
-    rrtype,
-    rrclass,
-    (void *)req,
-    after_resolve,
-    NULL
-  );
-
-  if (err != 0) {
-    nu_req_free(req);
-    return Nan::ThrowError(nu_strerror(err));
-  }
-
-  *req->refs += 1;
-
-  if (*req->refs == 1) {
-    assert(!req->poll->data);
-    req->poll->data = (void *)ub->ctx;
-    assert(uv_poll_start(req->poll, UV_READABLE, after_poll) == 0);
-  }
-
-  info.GetReturnValue().Set(info.This());
-#else
   char *qname = strdup(name);
 
   if (!qname)
@@ -542,103 +555,7 @@ NAN_METHOD(NodeUnbound::Resolve) {
   Nan::AsyncQueueWorker(worker);
 
   info.GetReturnValue().Set(info.This());
-#endif
 }
-
-#ifdef NODE_UNBOUND_ASYNC
-static nu_req_t *
-nu_req_create(uv_poll_t *poll, unsigned int *refs, Nan::Callback *cb) {
-  nu_req_t *req = (nu_req_t *)malloc(sizeof(nu_req_t));
-
-  if (!req) {
-    delete cb;
-    return NULL;
-  }
-
-  req->poll = poll;
-  req->refs = refs;
-  req->cb = cb;
-
-  return req;
-}
-
-static void
-nu_req_free(nu_req_t *req) {
-  assert(req);
-  assert(req->cb);
-  delete req->cb;
-  free(req);
-}
-
-static void
-after_poll(uv_poll_t *handle, int status, int events) {
-  struct ub_ctx *ctx = (struct ub_ctx *)handle->data;
-
-  assert(ctx);
-
-  if (status == 0 && (events & UV_READABLE))
-    ub_process(ctx);
-}
-
-static void
-after_resolve(void *data, int status, struct ub_result *result) {
-  Nan::HandleScope scope;
-  Nan::AsyncResource async_resource("unbound");
-
-  nu_req_t *req = (nu_req_t *)data;
-
-  assert(req);
-  assert(req->cb);
-  assert(*req->refs != 0);
-
-  if (*req->refs == 1) {
-    assert(uv_poll_stop(req->poll) == 0);
-    assert(req->poll->data);
-    req->poll->data = NULL;
-  }
-
-  *req->refs -= 1;
-
-  if (status != 0) {
-    v8::Local<v8::Value> argv[] = {
-      Nan::Error(nu_strerror(status)),
-      Nan::Null()
-    };
-
-    req->cb->Call(2, argv, &async_resource);
-
-    if (result)
-      ub_resolve_free(result);
-
-    nu_req_free(req);
-
-    return;
-  }
-
-  assert(result);
-
-  uint8_t *pkt = (uint8_t *)result->answer_packet;
-  size_t pkt_len = result->answer_len;
-
-  v8::Local<v8::Array> ret = Nan::New<v8::Array>();
-
-  ret->Set(0, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
-  ret->Set(1, Nan::New<v8::Boolean>((bool)result->secure));
-  ret->Set(2, Nan::New<v8::Boolean>((bool)result->bogus));
-
-  if (result->bogus && result->why_bogus)
-    ret->Set(3, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
-  else
-    ret->Set(3, Nan::Null());
-
-  v8::Local<v8::Value> argv[] = { Nan::Null(), ret };
-
-  req->cb->Call(2, argv, &async_resource);
-
-  ub_resolve_free(result);
-  nu_req_free(req);
-}
-#endif
 
 NAN_MODULE_INIT(init) {
   NodeUnbound::Init(target);

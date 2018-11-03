@@ -5,10 +5,6 @@
 #include <nan.h>
 #include <unbound.h>
 
-#ifdef NODE_UNBOUND_ASYNC
-#include <uv.h>
-#endif
-
 class NodeUnbound : public Nan::ObjectWrap {
 public:
   static NAN_METHOD(New);
@@ -18,10 +14,6 @@ public:
   ~NodeUnbound();
 
   struct ub_ctx *ctx;
-#ifdef NODE_UNBOUND_ASYNC
-  uv_poll_t poll;
-  unsigned int refs;
-#endif
 
 private:
   static NAN_METHOD(Version);

@@ -2,8 +2,7 @@
   "targets": [{
     "target_name": "unbound",
     "sources": [
-      "./src/node_unbound.cc",
-      "./src/node_unbound_async.cc"
+      "./src/node_unbound.cc"
     ],
     "cflags": [
       "-Wall",
