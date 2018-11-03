@@ -479,7 +479,7 @@ NodeUnboundWorker::Execute() {
   int err = ub_resolve(ctx, name, rrtype, rrclass, &result);
 
   if (err != 0)
-    SetErrorMessage(ub_strerror(err));
+    SetErrorMessage(nu_strerror(err));
 }
 
 void
