@@ -218,7 +218,7 @@ NAN_METHOD(NodeUnbound::SetStub) {
   Nan::Utf8String addr_(info[1]);
   const char *addr = (const char *)*addr_;
 
-  bool isprime = info[2]->BooleanValue();
+  bool isprime = Nan::To<bool>(info[2]).FromJust();
 
   int err = ub_ctx_set_stub(ub->ctx, zone, addr, (int)isprime);
 
@@ -303,7 +303,7 @@ NAN_METHOD(NodeUnbound::AddTrustAnchorFile) {
   Nan::Utf8String fname_(info[0]);
   const char *fname = (const char *)*fname_;
 
-  bool autr = info[2]->BooleanValue();
+  bool autr = Nan::To<bool>(info[2]).FromJust();
 
   int err;
 
@@ -531,8 +531,8 @@ NAN_METHOD(NodeUnbound::Resolve) {
   Nan::Utf8String name_(info[0]);
   const char *name = (const char *)*name_;
 
-  uint32_t rrtype = info[1]->Uint32Value();
-  uint32_t rrclass = info[2]->Uint32Value();
+  uint32_t rrtype = Nan::To<uint32_t>(info[1]).FromJust();
+  uint32_t rrclass = Nan::To<uint32_t>(info[2]).FromJust();
 
   v8::Local<v8::Function> callback = info[3].As<v8::Function>();
 
