@@ -561,4 +561,4 @@ NAN_MODULE_INIT(init) {
   NodeUnbound::Init(target);
 }
 
-NODE_MODULE(unbound, init)
+NAN_MODULE_WORKER_ENABLED(unbound, init)
