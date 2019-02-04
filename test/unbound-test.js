@@ -45,10 +45,10 @@ describe('Unbound', function() {
     const res = await ub.resolve('www.ietf.org');
 
     assert(res && typeof res === 'object');
-    assert(Buffer.isBuffer(res.msg));
-    assert(res.msg.length > 0);
+    assert(Buffer.isBuffer(res.answerPacket));
+    assert(res.answerPacket.length > 0);
     assert.strictEqual(res.secure, true);
     assert.strictEqual(res.bogus, false);
-    assert.strictEqual(res.reason, null);
+    assert.strictEqual(res.whyBogus, null);
   });
 });
