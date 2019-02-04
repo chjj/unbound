@@ -19,7 +19,7 @@ UnboundResult {
   qtype: 1,
   qclass: 1,
   data: [ <Buffer 68 14 01 55>, <Buffer 68 14 00 55> ],
-  canonname: 'www.ietf.org.cdn.cloudflare.net.',
+  canonName: 'www.ietf.org.cdn.cloudflare.net.',
   rcode: 0,
   answerPacket: <Buffer 00 00 81 a0 ... 474 more bytes>,
   haveData: true,

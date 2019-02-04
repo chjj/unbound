@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unbound.h>
 #include "node_unbound.h"
 
@@ -500,7 +501,7 @@ NodeUnboundWorker::HandleOKCallback() {
 
   assert(result != NULL);
 
-  uint8_t *pkt = (uint8_t *)result->answer_packet;
+  char *pkt = (char *)result->answer_packet;
   size_t pkt_len = (size_t)result->answer_len;
 
   v8::Local<v8::Array> ret = Nan::New<v8::Array>();
@@ -524,8 +525,8 @@ NodeUnboundWorker::HandleOKCallback() {
   else
     ret->Set(0, Nan::Null());
 
-  ret->Set(1, Nan::New<v8::Uint32>(result->qtype));
-  ret->Set(2, Nan::New<v8::Uint32>(result->qclass));
+  ret->Set(1, Nan::New<v8::Uint32>((uint32_t)result->qtype));
+  ret->Set(2, Nan::New<v8::Uint32>((uint32_t)result->qclass));
   ret->Set(3, items);
 
   if (result->canonname != NULL)
@@ -533,10 +534,10 @@ NodeUnboundWorker::HandleOKCallback() {
   else
     ret->Set(4, Nan::Null());
 
-  ret->Set(5, Nan::New<v8::Uint32>(result->rcode));
+  ret->Set(5, Nan::New<v8::Uint32>((uint32_t)result->rcode));
 
   if (pkt != NULL)
-    ret->Set(6, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
+    ret->Set(6, Nan::CopyBuffer(pkt, pkt_len).ToLocalChecked());
   else
     ret->Set(6, Nan::Null());
 
@@ -557,7 +558,7 @@ NodeUnboundWorker::HandleOKCallback() {
   ret->Set(12, Nan::New<v8::Boolean>(false));
 #endif
 
-  ret->Set(13, Nan::New<v8::Uint32>(result->ttl));
+  ret->Set(13, Nan::New<v8::Uint32>((uint32_t)result->ttl));
 
   ub_resolve_free(result);
   result = NULL;
