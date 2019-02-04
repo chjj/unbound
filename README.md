@@ -7,17 +7,28 @@ Bindings to [libunbound] for node.js.
 ``` js
 const Unbound = require('unbound');
 const ub = new Unbound();
-const result = await ub.resolve('google.com');
+const result = await ub.resolve('www.ietf.org');
 console.log(result);
 ```
 
 Outputs:
 
 ``` js
-{ msg: <Buffer 00 00 81 80 00 01 00 01 00 00 00 ... >,
-  secure: false,
+UnboundResult {
+  qname: 'www.ietf.org.',
+  qtype: 1,
+  qclass: 1,
+  data: [ <Buffer 68 14 01 55>, <Buffer 68 14 00 55> ],
+  canonname: 'www.ietf.org.cdn.cloudflare.net.',
+  rcode: 0,
+  answerPacket: <Buffer 00 00 81 a0 ... 474 more bytes>,
+  haveData: true,
+  nxDomain: false,
+  secure: true,
   bogus: false,
-  reason: null }
+  whyBogus: null,
+  wasRateLimited: false,
+  ttl: 300 }
 ```
 
 ## API
