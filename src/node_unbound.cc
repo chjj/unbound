@@ -465,7 +465,7 @@ NodeUnboundWorker::NodeUnboundWorker (
   int rrtype,
   int rrclass,
   Nan::Callback *callback
-) : Nan::AsyncWorker(callback)
+) : Nan::AsyncWorker(callback, "unbound:resolve")
   , ctx(ctx)
   , name(name)
   , rrtype(rrtype)
