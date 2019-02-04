@@ -99,7 +99,7 @@ NAN_METHOD(NodeUnbound::New) {
 
   ub->ctx = ub_ctx_create();
 
-  if (!ub->ctx)
+  if (ub->ctx == NULL)
     return Nan::ThrowError("Could not create Unbound instance.");
 
   int err = ub_ctx_debugout(ub->ctx, NULL);
@@ -545,7 +545,7 @@ NodeUnboundWorker::HandleOKCallback() {
   ret->Set(9, Nan::New<v8::Boolean>((bool)result->secure));
   ret->Set(10, Nan::New<v8::Boolean>((bool)result->bogus));
 
-  if (result->bogus && result->why_bogus != NULL)
+  if (result->why_bogus != NULL)
     ret->Set(11, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
   else
     ret->Set(11, Nan::Null());
