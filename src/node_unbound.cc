@@ -1,11 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <unbound.h>
 #include "node_unbound.h"
 
-static const char *
-nu_strerror(int err) {
+static void
+nu_strerror(char *errmsg, int err) {
   const char *msg = ub_strerror(err);
 
-  if (!msg)
+  if (msg == NULL)
     msg = "unknown error";
 
   size_t size = strlen(msg);
@@ -13,12 +15,22 @@ nu_strerror(int err) {
   if (size > 256)
     msg = "unknown error";
 
-  static char errmsg[12 + 256 + 1];
-
-  sprintf(&errmsg[0], "libunbound: %s", msg);
-
-  return errmsg;
+  sprintf(errmsg, "libunbound: %s (%d)", msg, err);
 }
+
+#define NU_ERROR_SIZE (12 + 256 + 2 + 11 + 1 + 1)
+
+#define NU_THROW_ERROR(err) do { \
+  char msg[NU_ERROR_SIZE];       \
+  nu_strerror(&msg[0], (err));   \
+  return Nan::ThrowError(msg);   \
+} while (0)
+
+#define NU_SET_ERROR(err) do { \
+  char msg[NU_ERROR_SIZE];     \
+  nu_strerror(&msg[0], (err)); \
+  SetErrorMessage(msg);        \
+} while (0)
 
 static Nan::Persistent<v8::FunctionTemplate> unbound_constructor;
 
@@ -27,7 +39,7 @@ NodeUnbound::NodeUnbound() {
 }
 
 NodeUnbound::~NodeUnbound() {
-  if (ctx) {
+  if (ctx != NULL) {
     ub_ctx_delete(ctx);
     ctx = NULL;
   }
@@ -93,12 +105,12 @@ NAN_METHOD(NodeUnbound::New) {
   int err = ub_ctx_debugout(ub->ctx, NULL);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   err = ub_ctx_debuglevel(ub->ctx, 0);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -124,7 +136,7 @@ NAN_METHOD(NodeUnbound::SetOption) {
   int err = ub_ctx_set_option(ub->ctx, opt, value);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -145,7 +157,7 @@ NAN_METHOD(NodeUnbound::GetOption) {
   int err = ub_ctx_get_option(ub->ctx, opt, &value);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   if (value == NULL) {
     info.GetReturnValue().Set(Nan::Null());
@@ -172,7 +184,7 @@ NAN_METHOD(NodeUnbound::SetConfig) {
   int err = ub_ctx_config(ub->ctx, fname);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -192,7 +204,7 @@ NAN_METHOD(NodeUnbound::SetForward) {
   int err = ub_ctx_set_fwd(ub->ctx, addr);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -223,7 +235,7 @@ NAN_METHOD(NodeUnbound::SetStub) {
   int err = ub_ctx_set_stub(ub->ctx, zone, addr, (int)isprime);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -243,7 +255,7 @@ NAN_METHOD(NodeUnbound::SetResolvConf) {
   int err = ub_ctx_resolvconf(ub->ctx, fname);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -263,7 +275,7 @@ NAN_METHOD(NodeUnbound::SetHosts) {
   int err = ub_ctx_hosts(ub->ctx, fname);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -283,7 +295,7 @@ NAN_METHOD(NodeUnbound::AddTrustAnchor) {
   int err = ub_ctx_add_ta(ub->ctx, ta);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -313,7 +325,7 @@ NAN_METHOD(NodeUnbound::AddTrustAnchorFile) {
     err = ub_ctx_add_ta_file(ub->ctx, fname);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -333,7 +345,7 @@ NAN_METHOD(NodeUnbound::AddTrustedKeys) {
   int err = ub_ctx_trustedkeys(ub->ctx, fname);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -359,7 +371,7 @@ NAN_METHOD(NodeUnbound::AddZone) {
   int err = ub_ctx_zone_add(ub->ctx, zone_name, zone_type);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -379,7 +391,7 @@ NAN_METHOD(NodeUnbound::RemoveZone) {
   int err = ub_ctx_zone_remove(ub->ctx, zone_name);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -399,7 +411,7 @@ NAN_METHOD(NodeUnbound::AddData) {
   int err = ub_ctx_data_add(ub->ctx, data);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -419,7 +431,7 @@ NAN_METHOD(NodeUnbound::RemoveData) {
   int err = ub_ctx_data_remove(ub->ctx, data);
 
   if (err != 0)
-    return Nan::ThrowError(nu_strerror(err));
+    NU_THROW_ERROR(err);
 
   info.GetReturnValue().Set(info.This());
 }
@@ -463,12 +475,12 @@ NodeUnboundWorker::NodeUnboundWorker (
 }
 
 NodeUnboundWorker::~NodeUnboundWorker() {
-  if (name) {
+  if (name != NULL) {
     free(name);
     name = NULL;
   }
 
-  if (result) {
+  if (result != NULL) {
     ub_resolve_free(result);
     result = NULL;
   }
@@ -479,28 +491,73 @@ NodeUnboundWorker::Execute() {
   int err = ub_resolve(ctx, name, rrtype, rrclass, &result);
 
   if (err != 0)
-    SetErrorMessage(nu_strerror(err));
+    NU_SET_ERROR(err);
 }
 
 void
 NodeUnboundWorker::HandleOKCallback() {
   Nan::HandleScope scope;
 
-  assert(result);
+  assert(result != NULL);
 
   uint8_t *pkt = (uint8_t *)result->answer_packet;
-  size_t pkt_len = result->answer_len;
+  size_t pkt_len = (size_t)result->answer_len;
 
   v8::Local<v8::Array> ret = Nan::New<v8::Array>();
+  v8::Local<v8::Array> items = Nan::New<v8::Array>();
 
-  ret->Set(0, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
-  ret->Set(1, Nan::New<v8::Boolean>((bool)result->secure));
-  ret->Set(2, Nan::New<v8::Boolean>((bool)result->bogus));
+  if (result->data != NULL && result->len != NULL) {
+    int i = 0;
 
-  if (result->bogus && result->why_bogus)
-    ret->Set(3, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
+    while (result->data[i] != NULL) {
+      char *data = result->data[i];
+      size_t len = (size_t)result->len[i];
+
+      items->Set(i, Nan::CopyBuffer(data, len).ToLocalChecked());
+
+      i += 1;
+    }
+  }
+
+  if (result->qname != NULL)
+    ret->Set(0, Nan::New<v8::String>(result->qname).ToLocalChecked());
   else
-    ret->Set(3, Nan::Null());
+    ret->Set(0, Nan::Null());
+
+  ret->Set(1, Nan::New<v8::Uint32>(result->qtype));
+  ret->Set(2, Nan::New<v8::Uint32>(result->qclass));
+  ret->Set(3, items);
+
+  if (result->canonname != NULL)
+    ret->Set(4, Nan::New<v8::String>(result->canonname).ToLocalChecked());
+  else
+    ret->Set(4, Nan::Null());
+
+  ret->Set(5, Nan::New<v8::Uint32>(result->rcode));
+
+  if (pkt != NULL)
+    ret->Set(6, Nan::CopyBuffer((char *)pkt, pkt_len).ToLocalChecked());
+  else
+    ret->Set(6, Nan::Null());
+
+  ret->Set(7, Nan::New<v8::Boolean>((bool)result->havedata));
+  ret->Set(8, Nan::New<v8::Boolean>((bool)result->nxdomain));
+  ret->Set(9, Nan::New<v8::Boolean>((bool)result->secure));
+  ret->Set(10, Nan::New<v8::Boolean>((bool)result->bogus));
+
+  if (result->bogus && result->why_bogus != NULL)
+    ret->Set(11, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
+  else
+    ret->Set(11, Nan::Null());
+
+#if UNBOUND_VERSION_MAJOR > 1 \
+|| (UNBOUND_VERSION_MAJOR == 1 && UNBOUND_VERSION_MINOR >= 8)
+  ret->Set(12, Nan::New<v8::Boolean>((bool)result->was_ratelimited));
+#else
+  ret->Set(12, Nan::New<v8::Boolean>(false));
+#endif
+
+  ret->Set(13, Nan::New<v8::Uint32>(result->ttl));
 
   ub_resolve_free(result);
   result = NULL;
@@ -538,8 +595,8 @@ NAN_METHOD(NodeUnbound::Resolve) {
 
   char *qname = strdup(name);
 
-  if (!qname)
-    return Nan::ThrowTypeError("Could not allocate memory.");
+  if (qname == NULL)
+    return Nan::ThrowError("Could not allocate memory.");
 
   NodeUnboundWorker *worker = new NodeUnboundWorker(
     ub->ctx,
