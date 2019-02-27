@@ -316,7 +316,7 @@ NAN_METHOD(NodeUnbound::AddTrustAnchorFile) {
   Nan::Utf8String fname_(info[0]);
   const char *fname = (const char *)*fname_;
 
-  bool autr = Nan::To<bool>(info[2]).FromJust();
+  bool autr = Nan::To<bool>(info[1]).FromJust();
 
   int err;
 
