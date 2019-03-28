@@ -619,4 +619,8 @@ NAN_MODULE_INIT(init) {
   NodeUnbound::Init(target);
 }
 
+#if NODE_MAJOR_VERSION >= 10
 NAN_MODULE_WORKER_ENABLED(unbound, init)
+#else
+NODE_MODULE(unbound, init)
+#endif
