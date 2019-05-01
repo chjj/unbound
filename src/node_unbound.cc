@@ -79,7 +79,8 @@ NodeUnbound::Init(v8::Local<v8::Object> &target) {
   v8::Local<v8::FunctionTemplate> ctor =
     Nan::New<v8::FunctionTemplate>(unbound_constructor);
 
-  target->Set(Nan::New("NodeUnbound").ToLocalChecked(), ctor->GetFunction());
+  target->Set(Nan::New("NodeUnbound").ToLocalChecked(),
+    Nan::GetFunction(ctor).ToLocalChecked());
 }
 
 NAN_METHOD(NodeUnbound::Version) {
