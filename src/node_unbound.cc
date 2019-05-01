@@ -79,8 +79,8 @@ NodeUnbound::Init(v8::Local<v8::Object> &target) {
   v8::Local<v8::FunctionTemplate> ctor =
     Nan::New<v8::FunctionTemplate>(unbound_constructor);
 
-  target->Set(Nan::New("NodeUnbound").ToLocalChecked(),
-    Nan::GetFunction(ctor).ToLocalChecked());
+  Nan::Set(target, Nan::New("NodeUnbound").ToLocalChecked(),
+                   Nan::GetFunction(ctor).ToLocalChecked());
 }
 
 NAN_METHOD(NodeUnbound::Version) {
@@ -515,51 +515,51 @@ NodeUnboundWorker::HandleOKCallback() {
       char *data = result->data[i];
       size_t len = (size_t)result->len[i];
 
-      items->Set(i, Nan::CopyBuffer(data, len).ToLocalChecked());
+      Nan::Set(items, i, Nan::CopyBuffer(data, len).ToLocalChecked());
 
       i += 1;
     }
   }
 
   if (result->qname != NULL)
-    ret->Set(0, Nan::New<v8::String>(result->qname).ToLocalChecked());
+    Nan::Set(ret, 0, Nan::New<v8::String>(result->qname).ToLocalChecked());
   else
-    ret->Set(0, Nan::Null());
+    Nan::Set(ret, 0, Nan::Null());
 
-  ret->Set(1, Nan::New<v8::Uint32>((uint32_t)result->qtype));
-  ret->Set(2, Nan::New<v8::Uint32>((uint32_t)result->qclass));
-  ret->Set(3, items);
+  Nan::Set(ret, 1, Nan::New<v8::Uint32>((uint32_t)result->qtype));
+  Nan::Set(ret, 2, Nan::New<v8::Uint32>((uint32_t)result->qclass));
+  Nan::Set(ret, 3, items);
 
   if (result->canonname != NULL)
-    ret->Set(4, Nan::New<v8::String>(result->canonname).ToLocalChecked());
+    Nan::Set(ret, 4, Nan::New<v8::String>(result->canonname).ToLocalChecked());
   else
-    ret->Set(4, Nan::Null());
+    Nan::Set(ret, 4, Nan::Null());
 
-  ret->Set(5, Nan::New<v8::Uint32>((uint32_t)result->rcode));
+  Nan::Set(ret, 5, Nan::New<v8::Uint32>((uint32_t)result->rcode));
 
   if (pkt != NULL)
-    ret->Set(6, Nan::CopyBuffer(pkt, pkt_len).ToLocalChecked());
+    Nan::Set(ret, 6, Nan::CopyBuffer(pkt, pkt_len).ToLocalChecked());
   else
-    ret->Set(6, Nan::Null());
+    Nan::Set(ret, 6, Nan::Null());
 
-  ret->Set(7, Nan::New<v8::Boolean>((bool)result->havedata));
-  ret->Set(8, Nan::New<v8::Boolean>((bool)result->nxdomain));
-  ret->Set(9, Nan::New<v8::Boolean>((bool)result->secure));
-  ret->Set(10, Nan::New<v8::Boolean>((bool)result->bogus));
+  Nan::Set(ret, 7, Nan::New<v8::Boolean>((bool)result->havedata));
+  Nan::Set(ret, 8, Nan::New<v8::Boolean>((bool)result->nxdomain));
+  Nan::Set(ret, 9, Nan::New<v8::Boolean>((bool)result->secure));
+  Nan::Set(ret, 10, Nan::New<v8::Boolean>((bool)result->bogus));
 
   if (result->why_bogus != NULL)
-    ret->Set(11, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
+    Nan::Set(ret, 11, Nan::New<v8::String>(result->why_bogus).ToLocalChecked());
   else
-    ret->Set(11, Nan::Null());
+    Nan::Set(ret, 11, Nan::Null());
 
 #if UNBOUND_VERSION_MAJOR > 1 \
 || (UNBOUND_VERSION_MAJOR == 1 && UNBOUND_VERSION_MINOR >= 8)
-  ret->Set(12, Nan::New<v8::Boolean>((bool)result->was_ratelimited));
+  Nan::Set(ret, 12, Nan::New<v8::Boolean>((bool)result->was_ratelimited));
 #else
-  ret->Set(12, Nan::New<v8::Boolean>(false));
+  Nan::Set(ret, 12, Nan::New<v8::Boolean>(false));
 #endif
 
-  ret->Set(13, Nan::New<v8::Uint32>((uint32_t)result->ttl));
+  Nan::Set(ret, 13, Nan::New<v8::Uint32>((uint32_t)result->ttl));
 
   ub_resolve_free(result);
   result = NULL;
