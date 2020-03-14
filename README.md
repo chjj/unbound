@@ -7,6 +7,12 @@ Bindings to [libunbound] for node.js.
 ``` js
 const Unbound = require('unbound');
 const ub = new Unbound();
+
+const KSK_2017 = '. 172800 IN DS 20326 8 2'
+  + ' E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D';
+
+ub.addTrustAnchor(KSK_2017);
+
 const result = await ub.resolve('www.ietf.org');
 console.log(result);
 ```
@@ -47,8 +53,8 @@ The API is a direct mapping to [libunbound calls][header].
 - `Unbound#setConfig(file)` - Read unbound config file.
 - `Unbound#setForward(addr)` - Set host to forward DNS queries to.
 - `Unbound#setStub(zone, addr, [prime=false])` - Setup stub zone.
-- `Unbound#setResolvConf(filename)` - Read from `resolv.conf`.
-- `Unbound#setHosts(filename)` - Read from an `/etc/hosts` file.
+- `Unbound#setResolvConf(file)` - Read from `resolv.conf`.
+- `Unbound#setHosts(file)` - Read from an `/etc/hosts` file.
 - `Unbound#addTrustAnchor(ta)` - Add a trust anchor (DS/DNSKEY presentation).
 - `Unbound#addTrustAnchorFile(file, [autr=false])` - Add trust anchor file.
   Set `autr` for auto-updating and reading.
@@ -70,7 +76,7 @@ all code is your original work. `</legalese>`
 
 ## License
 
-- Copyright (c) 2018, Christopher Jeffrey (MIT License).
+- Copyright (c) 2018-2020, Christopher Jeffrey (MIT License).
 
 See LICENSE for more info.
 
