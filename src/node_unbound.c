@@ -52,18 +52,13 @@
  */
 
 static void
-node_ub_strerror(char *errmsg, int err) {
-  const char *msg = ub_strerror(err);
+node_ub_strerror(char *out, int code) {
+  const char *msg = ub_strerror(code);
 
-  if (msg == NULL)
+  if (msg == NULL || strlen(msg) > 256)
     msg = "unknown error";
 
-  size_t size = strlen(msg);
-
-  if (size > 256)
-    msg = "unknown error";
-
-  sprintf(errmsg, "libunbound: %s (%d)", msg, err);
+  sprintf(out, "libunbound: %s (%d)", msg, code);
 }
 
 /*
@@ -447,9 +442,9 @@ node_ub_remove_data(napi_env env, napi_callback_info info) {
 
 typedef struct node_ub_worker_s {
   struct ub_ctx *ctx;
-  char name[NODE_UB_MAX_STR];
-  uint32_t rrtype;
-  uint32_t rrclass;
+  char qname[NODE_UB_MAX_STR];
+  uint32_t qtype;
+  uint32_t qclass;
   struct ub_result *result;
   int error;
   napi_ref ref;
@@ -461,7 +456,7 @@ static void
 node_ub_execute_(napi_env env, void *data) {
   node_ub_worker_t *w = (node_ub_worker_t *)data;
 
-  w->error = ub_resolve(w->ctx, w->name, w->rrtype, w->rrclass, &w->result);
+  w->error = ub_resolve(w->ctx, w->qname, w->qtype, w->qclass, &w->result);
 }
 
 static void
@@ -477,8 +472,6 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
     napi_value values[14];
     napi_value buf;
     size_t i;
-
-    CHECK(r != NULL);
 
     memset(values, 0, sizeof(values));
 
@@ -549,14 +542,14 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
 
     CHECK(napi_resolve_deferred(env, w->deferred, result) == napi_ok);
   } else {
-    char errmsg[NODE_UB_MAX_ERR];
+    char msg[NODE_UB_MAX_ERR];
     napi_value codeval, errval;
 
-    node_ub_strerror(errmsg, w->error);
+    node_ub_strerror(msg, w->error);
 
     CHECK(napi_create_string_utf8(env, "ERR_UNBOUND",
                                   NAPI_AUTO_LENGTH, &codeval) == napi_ok);
-    CHECK(napi_create_string_utf8(env, errmsg,
+    CHECK(napi_create_string_utf8(env, msg,
                                   NAPI_AUTO_LENGTH, &errval) == napi_ok);
 
     CHECK(napi_create_error(env, codeval, errval, &result) == napi_ok);
@@ -577,32 +570,32 @@ node_ub_resolve(napi_env env, napi_callback_info info) {
   node_ub_worker_t *worker;
   napi_value argv[4];
   size_t argc = 4;
-  char name[NODE_UB_MAX_STR];
-  size_t name_len;
-  uint32_t rrtype, rrclass;
+  char qname[NODE_UB_MAX_STR];
+  size_t qname_len;
+  uint32_t qtype, qclass;
   struct ub_ctx *ctx;
   napi_value workname, result;
 
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 4);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], name, sizeof(name),
-                                   &name_len) == napi_ok);
-  CHECK(napi_get_value_uint32(env, argv[2], &rrtype) == napi_ok);
-  CHECK(napi_get_value_uint32(env, argv[3], &rrclass) == napi_ok);
+  CHECK(napi_get_value_string_utf8(env, argv[1], qname, sizeof(qname),
+                                   &qname_len) == napi_ok);
+  CHECK(napi_get_value_uint32(env, argv[2], &qtype) == napi_ok);
+  CHECK(napi_get_value_uint32(env, argv[3], &qclass) == napi_ok);
 
-  JS_ASSERT(name_len != sizeof(name) - 1, JS_ERR_STRING);
+  JS_ASSERT(qname_len != sizeof(qname) - 1, JS_ERR_STRING);
 
-  worker = (node_ub_worker_t *)malloc(sizeof(node_ub_worker_t));
+  worker = malloc(sizeof(node_ub_worker_t));
 
   CHECK(worker != NULL);
 
   memset(worker, 0, sizeof(node_ub_worker_t));
 
   worker->ctx = ctx;
-  memcpy(worker->name, name, name_len + 1);
-  worker->rrtype = rrtype;
-  worker->rrclass = rrclass;
+  memcpy(worker->qname, qname, qname_len + 1);
+  worker->qtype = qtype;
+  worker->qclass = qclass;
   worker->result = NULL;
   worker->error = 0;
 

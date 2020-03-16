@@ -5,6 +5,9 @@
       "./src/node_unbound.c"
     ],
     "cflags": [
+      "-std=c89",
+      "-pedantic",
+      "-Wshadow",
       "-Wall",
       "-Wextra",
       "-O3"
