@@ -454,14 +454,14 @@ typedef struct node_ub_worker_s {
 
 static void
 node_ub_execute_(napi_env env, void *data) {
-  node_ub_worker_t *w = (node_ub_worker_t *)data;
+  node_ub_worker_t *w = data;
 
   w->error = ub_resolve(w->ctx, w->qname, w->qtype, w->qclass, &w->result);
 }
 
 static void
 node_ub_complete_(napi_env env, napi_status status, void *data) {
-  node_ub_worker_t *w = (node_ub_worker_t *)data;
+  node_ub_worker_t *w = data;
   napi_value result;
 
   if (status != napi_ok)
