@@ -79,7 +79,7 @@ node_ub_version(napi_env env, napi_callback_info info) {
 
 static void
 node_ub_destroy(napi_env env, void *data, void *hint) {
-  struct ub_ctx *ctx = (struct ub_ctx *)data;
+  struct ub_ctx *ctx = data;
 
   ub_ctx_delete(ctx);
 }
