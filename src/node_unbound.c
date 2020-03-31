@@ -484,10 +484,9 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
 
     CHECK(napi_create_uint32(env, r->qtype, &values[1]) == napi_ok);
     CHECK(napi_create_uint32(env, r->qclass, &values[2]) == napi_ok);
+    CHECK(napi_create_array(env, &values[3]) == napi_ok);
 
     if (r->data != NULL && r->len != NULL) {
-      CHECK(napi_create_array(env, &values[3]) == napi_ok);
-
       i = 0;
 
       while (r->data[i] != NULL) {
