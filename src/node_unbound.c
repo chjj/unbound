@@ -12,13 +12,9 @@
 #include <node_api.h>
 #include <unbound.h>
 
-#define CHECK(expr) do {                               \
-  if (!(expr)) {                                       \
-    fprintf(stderr, "%s:%d: Assertion `%s' failed.\n", \
-            __FILE__, __LINE__, #expr);                \
-    fflush(stderr);                                    \
-    abort();                                           \
-  }                                                    \
+#define CHECK(expr) do {                            \
+  if (!(expr))                                      \
+    node_ub_assert_fail(__FILE__, __LINE__, #expr); \
 } while (0)
 
 #define JS_THROW(msg) do {                              \
@@ -48,6 +44,17 @@
 } while (0)
 
 /*
+ * Assertions
+ */
+
+static void
+node_ub_assert_fail(const char *file, int line, const char *expr) {
+  fprintf(stderr, "%s:%d: Assertion `%s' failed.\n", file, line, expr);
+  fflush(stderr);
+  abort();
+}
+
+/*
  * Helpers
  */
 
@@ -69,10 +76,10 @@ static napi_value
 node_ub_version(napi_env env, napi_callback_info info) {
   napi_value result;
 
-  CHECK(napi_create_string_utf8(env,
-                                ub_version(),
-                                NAPI_AUTO_LENGTH,
-                                &result) == napi_ok);
+  CHECK(napi_create_string_latin1(env,
+                                  ub_version(),
+                                  NAPI_AUTO_LENGTH,
+                                  &result) == napi_ok);
 
   return result;
 }
@@ -127,10 +134,10 @@ node_ub_set_option(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 3);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], opt, sizeof(opt),
-                                   &opt_len) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[2], val, sizeof(val),
-                                   &val_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], opt, sizeof(opt),
+                                     &opt_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[2], val, sizeof(val),
+                                     &val_len) == napi_ok);
 
   JS_ASSERT(opt_len != sizeof(opt) - 1, JS_ERR_STRING);
   JS_ASSERT(val_len != sizeof(val) - 1, JS_ERR_STRING);
@@ -153,8 +160,8 @@ node_ub_get_option(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], opt, sizeof(opt),
-                                   &opt_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], opt, sizeof(opt),
+                                     &opt_len) == napi_ok);
 
   JS_ASSERT(opt_len != sizeof(opt) - 1, JS_ERR_STRING);
 
@@ -165,8 +172,8 @@ node_ub_get_option(napi_env env, napi_callback_info info) {
     return result;
   }
 
-  CHECK(napi_create_string_utf8(env, val, NAPI_AUTO_LENGTH,
-                                &result) == napi_ok);
+  CHECK(napi_create_string_latin1(env, val, NAPI_AUTO_LENGTH,
+                                  &result) == napi_ok);
 
   free(val);
 
@@ -184,8 +191,8 @@ node_ub_set_config(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], fname, sizeof(fname),
-                                   &fname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], fname, sizeof(fname),
+                                     &fname_len) == napi_ok);
 
   JS_ASSERT(fname_len != sizeof(fname) - 1, JS_ERR_STRING);
 
@@ -205,8 +212,8 @@ node_ub_set_forward(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], addr, sizeof(addr),
-                                   &addr_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], addr, sizeof(addr),
+                                     &addr_len) == napi_ok);
 
   JS_ASSERT(addr_len != sizeof(addr) - 1, JS_ERR_STRING);
 
@@ -228,10 +235,10 @@ node_ub_set_stub(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 4);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], zone, sizeof(zone),
-                                   &zone_len) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[2], addr, sizeof(addr),
-                                   &addr_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], zone, sizeof(zone),
+                                     &zone_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[2], addr, sizeof(addr),
+                                     &addr_len) == napi_ok);
   CHECK(napi_get_value_bool(env, argv[3], &isprime) == napi_ok);
 
   JS_ASSERT(zone_len != sizeof(zone) - 1, JS_ERR_STRING);
@@ -253,8 +260,8 @@ node_ub_set_resolvconf(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], fname, sizeof(fname),
-                                   &fname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], fname, sizeof(fname),
+                                     &fname_len) == napi_ok);
 
   JS_ASSERT(fname_len != sizeof(fname) - 1, JS_ERR_STRING);
 
@@ -274,8 +281,8 @@ node_ub_set_hosts(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], fname, sizeof(fname),
-                                   &fname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], fname, sizeof(fname),
+                                     &fname_len) == napi_ok);
 
   JS_ASSERT(fname_len != sizeof(fname) - 1, JS_ERR_STRING);
 
@@ -295,8 +302,8 @@ node_ub_add_ta(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], ta, sizeof(ta),
-                                   &ta_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], ta, sizeof(ta),
+                                     &ta_len) == napi_ok);
 
   JS_ASSERT(ta_len != sizeof(ta) - 1, JS_ERR_STRING);
 
@@ -317,8 +324,8 @@ node_ub_add_ta_file(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 3);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], fname, sizeof(fname),
-                                   &fname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], fname, sizeof(fname),
+                                     &fname_len) == napi_ok);
   CHECK(napi_get_value_bool(env, argv[2], &autr) == napi_ok);
 
   JS_ASSERT(fname_len != sizeof(fname) - 1, JS_ERR_STRING);
@@ -342,8 +349,8 @@ node_ub_add_trustedkeys(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], fname, sizeof(fname),
-                                   &fname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], fname, sizeof(fname),
+                                     &fname_len) == napi_ok);
 
   JS_ASSERT(fname_len != sizeof(fname) - 1, JS_ERR_STRING);
 
@@ -364,10 +371,10 @@ node_ub_add_zone(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 3);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], name, sizeof(name),
-                                   &name_len) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[2], type, sizeof(type),
-                                   &type_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], name, sizeof(name),
+                                     &name_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[2], type, sizeof(type),
+                                     &type_len) == napi_ok);
 
   JS_ASSERT(name_len != sizeof(name) - 1, JS_ERR_STRING);
   JS_ASSERT(type_len != sizeof(type) - 1, JS_ERR_STRING);
@@ -388,8 +395,8 @@ node_ub_remove_zone(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], name, sizeof(name),
-                                   &name_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], name, sizeof(name),
+                                     &name_len) == napi_ok);
 
   JS_ASSERT(name_len != sizeof(name) - 1, JS_ERR_STRING);
 
@@ -409,8 +416,8 @@ node_ub_add_data(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], data, sizeof(data),
-                                   &data_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], data, sizeof(data),
+                                     &data_len) == napi_ok);
 
   JS_ASSERT(data_len != sizeof(data) - 1, JS_ERR_STRING);
 
@@ -430,8 +437,8 @@ node_ub_remove_data(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 2);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], data, sizeof(data),
-                                   &data_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], data, sizeof(data),
+                                     &data_len) == napi_ok);
 
   JS_ASSERT(data_len != sizeof(data) - 1, JS_ERR_STRING);
 
@@ -476,8 +483,8 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
     memset(values, 0, sizeof(values));
 
     if (r->qname != NULL) {
-      CHECK(napi_create_string_utf8(env, r->qname, NAPI_AUTO_LENGTH,
-                                    &values[0]) == napi_ok);
+      CHECK(napi_create_string_latin1(env, r->qname, NAPI_AUTO_LENGTH,
+                                      &values[0]) == napi_ok);
     } else {
       CHECK(napi_get_null(env, &values[0]) == napi_ok);
     }
@@ -498,8 +505,8 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
     }
 
     if (r->canonname != NULL) {
-      CHECK(napi_create_string_utf8(env, r->canonname, NAPI_AUTO_LENGTH,
-                                    &values[4]) == napi_ok);
+      CHECK(napi_create_string_latin1(env, r->canonname, NAPI_AUTO_LENGTH,
+                                      &values[4]) == napi_ok);
     } else {
       CHECK(napi_get_null(env, &values[4]) == napi_ok);
     }
@@ -519,8 +526,8 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
     CHECK(napi_get_boolean(env, r->bogus, &values[10]) == napi_ok);
 
     if (r->why_bogus != NULL) {
-      CHECK(napi_create_string_utf8(env, r->why_bogus, NAPI_AUTO_LENGTH,
-                                    &values[11]) == napi_ok);
+      CHECK(napi_create_string_latin1(env, r->why_bogus, NAPI_AUTO_LENGTH,
+                                      &values[11]) == napi_ok);
     } else {
       CHECK(napi_get_null(env, &values[11]) == napi_ok);
     }
@@ -546,10 +553,10 @@ node_ub_complete_(napi_env env, napi_status status, void *data) {
 
     node_ub_strerror(msg, w->error);
 
-    CHECK(napi_create_string_utf8(env, "ERR_UNBOUND",
-                                  NAPI_AUTO_LENGTH, &codeval) == napi_ok);
-    CHECK(napi_create_string_utf8(env, msg,
-                                  NAPI_AUTO_LENGTH, &errval) == napi_ok);
+    CHECK(napi_create_string_latin1(env, "ERR_UNBOUND", NAPI_AUTO_LENGTH,
+                                    &codeval) == napi_ok);
+    CHECK(napi_create_string_latin1(env, msg, NAPI_AUTO_LENGTH,
+                                    &errval) == napi_ok);
 
     CHECK(napi_create_error(env, codeval, errval, &result) == napi_ok);
     CHECK(napi_reject_deferred(env, w->deferred, result) == napi_ok);
@@ -578,8 +585,8 @@ node_ub_resolve(napi_env env, napi_callback_info info) {
   CHECK(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
   CHECK(argc == 4);
   CHECK(napi_get_value_external(env, argv[0], (void **)&ctx) == napi_ok);
-  CHECK(napi_get_value_string_utf8(env, argv[1], qname, sizeof(qname),
-                                   &qname_len) == napi_ok);
+  CHECK(napi_get_value_string_latin1(env, argv[1], qname, sizeof(qname),
+                                     &qname_len) == napi_ok);
   CHECK(napi_get_value_uint32(env, argv[2], &qtype) == napi_ok);
   CHECK(napi_get_value_uint32(env, argv[3], &qclass) == napi_ok);
 
@@ -600,8 +607,8 @@ node_ub_resolve(napi_env env, napi_callback_info info) {
 
   CHECK(napi_create_reference(env, argv[0], 1, &worker->ref) == napi_ok);
 
-  CHECK(napi_create_string_utf8(env, "unbound:resolve",
-                                NAPI_AUTO_LENGTH, &workname) == napi_ok);
+  CHECK(napi_create_string_latin1(env, "unbound:resolve", NAPI_AUTO_LENGTH,
+                                  &workname) == napi_ok);
 
   CHECK(napi_create_promise(env, &worker->deferred, &result) == napi_ok);
 
