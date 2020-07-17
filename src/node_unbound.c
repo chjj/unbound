@@ -633,27 +633,29 @@ napi_value
 node_ub_init(napi_env env, napi_value exports) {
   size_t i;
 
-  static struct {
+  static const struct {
     const char *name;
     napi_callback callback;
   } funcs[] = {
-    { "ub_version", node_ub_version },
-    { "ub_create", node_ub_create },
-    { "ub_set_option", node_ub_set_option },
-    { "ub_get_option", node_ub_get_option },
-    { "ub_set_config", node_ub_set_config },
-    { "ub_set_forward", node_ub_set_forward },
-    { "ub_set_stub", node_ub_set_stub },
-    { "ub_set_resolvconf", node_ub_set_resolvconf },
-    { "ub_set_hosts", node_ub_set_hosts },
-    { "ub_add_ta", node_ub_add_ta },
-    { "ub_add_ta_file", node_ub_add_ta_file },
-    { "ub_add_trustedkeys", node_ub_add_trustedkeys },
-    { "ub_add_zone", node_ub_add_zone },
-    { "ub_remove_zone", node_ub_remove_zone },
-    { "ub_add_data", node_ub_add_data },
-    { "ub_remove_data", node_ub_remove_data },
-    { "ub_resolve", node_ub_resolve }
+#define F(name) { #name, node_ ## name }
+    F(ub_version),
+    F(ub_create),
+    F(ub_set_option),
+    F(ub_get_option),
+    F(ub_set_config),
+    F(ub_set_forward),
+    F(ub_set_stub),
+    F(ub_set_resolvconf),
+    F(ub_set_hosts),
+    F(ub_add_ta),
+    F(ub_add_ta_file),
+    F(ub_add_trustedkeys),
+    F(ub_add_zone),
+    F(ub_remove_zone),
+    F(ub_add_data),
+    F(ub_remove_data),
+    F(ub_resolve)
+#undef F
   };
 
   for (i = 0; i < sizeof(funcs) / sizeof(funcs[0]); i++) {
