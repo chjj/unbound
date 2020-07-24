@@ -76,6 +76,8 @@ static napi_value
 node_ub_version(napi_env env, napi_callback_info info) {
   napi_value result;
 
+  (void)info;
+
   CHECK(napi_create_string_latin1(env,
                                   ub_version(),
                                   NAPI_AUTO_LENGTH,
@@ -88,6 +90,9 @@ static void
 node_ub_destroy(napi_env env, void *data, void *hint) {
   struct ub_ctx *ctx = data;
 
+  (void)env;
+  (void)hint;
+
   ub_ctx_delete(ctx);
 }
 
@@ -96,6 +101,8 @@ node_ub_create(napi_env env, napi_callback_info info) {
   struct ub_ctx *ctx = ub_ctx_create();
   napi_value handle;
   int err;
+
+  (void)info;
 
   JS_ASSERT(ctx != NULL, JS_ERR_CONTEXT);
 
@@ -463,6 +470,8 @@ static void
 node_ub_execute_(napi_env env, void *data) {
   node_ub_worker_t *w = data;
 
+  (void)env;
+
   w->error = ub_resolve(w->ctx, w->qname, w->qtype, w->qclass, &w->result);
 }
 
@@ -629,8 +638,14 @@ node_ub_resolve(napi_env env, napi_callback_info info) {
  * Module
  */
 
-napi_value
-node_ub_init(napi_env env, napi_value exports) {
+#ifndef NAPI_MODULE_INIT
+#define NAPI_MODULE_INIT()                                        \
+static napi_value node_ub_init(napi_env env, napi_value exports); \
+NAPI_MODULE(NODE_GYP_MODULE_NAME, bcrypto_init)                   \
+static napi_value node_ub_init(napi_env env, napi_value exports)
+#endif
+
+NAPI_MODULE_INIT() {
   size_t i;
 
   static const struct {
@@ -675,5 +690,3 @@ node_ub_init(napi_env env, napi_value exports) {
 
   return exports;
 }
-
-NAPI_MODULE(NODE_GYP_MODULE_NAME, node_ub_init)

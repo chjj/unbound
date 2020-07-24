@@ -15,12 +15,12 @@
   "author": "Christopher Jeffrey <chjjeffrey@gmail.com>",
   "main": "./lib/unbound.js",
   "scripts": {
-    "install": "node-gyp rebuild",
+    "install": "cmake-node --production --fallback",
     "lint": "eslint lib/ test/ || exit 0",
     "test": "bmocha --reporter spec test/*-test.js"
   },
   "dependencies": {
-    "loady": "~0.0.1"
+    "cmake-node": "~0.0.16"
   },
   "devDependencies": {
     "bmocha": "^2.1.0"
