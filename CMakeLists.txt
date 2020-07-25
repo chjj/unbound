@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 3.4)
 project(node_unbound LANGUAGES C)
 
+include(NodeJS)
+
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 99)
