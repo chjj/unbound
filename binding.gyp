@@ -16,8 +16,14 @@
         }
       }],
       ["OS == 'win'", {
+        'include_dirs': [
+          'C:/msys64/mingw64/include'
+        ],
+        'library_dirs': [
+          'C:/msys64/mingw64/lib',
+        ],
         "libraries": [
-          "-lunbound.lib"
+          "-llibunbound.dll.a"
         ]
       }, {
         "libraries": [

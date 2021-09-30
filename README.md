@@ -68,6 +68,16 @@ The API is a direct mapping to [libunbound calls][header].
   resolution (returns a `Promise`). `type` and `class` are raw qtypes and
   qclasses (no strings!). See above example for return value.
 
+## Building on Windows
+
+Windows builds are possible with MSYS2 / MinGW.
+
+1. Install MSYS2 from https://www.msys2.org - follow the instructions on that page
+2. Install dependencies - do one of the following in an MSYS2 shell
+   - x86_64: `pacman -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-unbound mingw-w64-x86_64-crt-git`
+   - x86: `pacman -S base-devel mingw-w64-i686-toolchain mingw-w64-i686-unbound mingw-w64-i686-crt-git`
+3. Then build normally from the MSYS2 shell.
+
 ## Contribution and License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code
